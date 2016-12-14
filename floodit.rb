@@ -20,37 +20,50 @@ splash.splash
 
 
 #method updating array elements with new colour
-def neighbour_update(board,width,height,next_colour,i,j,count,first_block)
+def neighbour_update(board,width,height,next_colour,i,j,count,first_block,finished_game_counter,current_score)
   if board[i][j] == first_block
     board[i].map!.with_index{|r,c| (c == j ? r = next_colour : r)}
     if i > 0 
-      neighbour_update(board,width,height,next_colour,i-1,j,count,first_block)
+      neighbour_update(board,width,height,next_colour,i-1,j,count,first_block,finished_game_counter,current_score)
     end
     if j > 0  
-      neighbour_update(board,width,height,next_colour,i,j-1,count,first_block)
+      neighbour_update(board,width,height,next_colour,i,j-1,count,first_block,finished_game_counter,current_score)
     end
     if i < height-1
-      neighbour_update(board,width,height,next_colour,i+1,j,count,first_block)
+      neighbour_update(board,width,height,next_colour,i+1,j,count,first_block,finished_game_counter,current_score)
     end
     if j < width-1 
-      neighbour_update(board,width,height,next_colour,i,j+1,count,first_block)
+      neighbour_update(board,width,height,next_colour,i,j+1,count,first_block,finished_game_counter,current_score)
     end
   end
-  choose_colour(board,width,height,count)
+  choose_colour(board,width,height,count,finished_game_counter,current_score)
 end
 
 
-#highscore//def high_score(count)
-  #puts 
-#end
+def high_score(current_score,finished_game_counter)
+  if finished_game_counter == 0
+    puts "No games played yet"
+  elsif
+    puts "Best game: #{current_score} turns"
+  end
+end
   
 #puts the number of turns the user took when called
 def turns(count)
   puts count
 end
-  
+ 
+#prints congratulation message when the game finishes
+def congratulation(percentage,count,current_score,finished_game_counter,width,height)
+  puts "You won after #{count} turns"
+  again = gets
+  if again == "\n"
+    main_menu(width,height,current_score,finished_game_counter)
+  end
+end
+
 #calculates the percentage completion 
-def completion(board,width,height)
+def completion(board,width,height,count,finished_game_counter,current_score)
   #define individual counters for each colour
   counter_red = 0
   counter_green = 0
@@ -91,21 +104,33 @@ def completion(board,width,height)
     percentage = (counter_cyan*100)/(width*height)
   end
   puts "#{percentage}%"
+  if percentage == 100
+    finished_game_counter += 1
+    if finished_game_counter == 1
+      current_score = count
+      high_score(current_score,finished_game_counter)
+    elsif finished_game_counter > 1
+      if count < current_score
+        current_score = count
+        high_score(current_score,finished_game_counter)
+      end
+    end
+    congratulation(percentage,count,current_score,finished_game_counter,width,height)
+  end
 end
 
 
   
   
 #initialize neighbour_update method
-def change_colour(board,user_colour,width,height,count)
+def change_colour(board,user_colour,width,height,count,finished_game_counter,current_score)
   first_block = board[0][0]
   next_colour = user_colour
-  board[0][0] = next_colour
-  neighbour_update(board,width,height,next_colour,0,0,count,first_block)
+  neighbour_update(board,width,height,next_colour,0,0,count,first_block,finished_game_counter,current_score)
 end
 
 #takes user input (main)
-def choose_colour(board,width,height,count)
+def choose_colour(board,width,height,count,finished_game_counter,current_score)
   #prints the array
   board.each do |row|
     row.each do |column| 
@@ -132,39 +157,39 @@ def choose_colour(board,width,height,count)
   turns(count)
   print "Current completion: "
   #calls completion method
-  completion(board,width,height)
+  completion(board,width,height,count,finished_game_counter,current_score)
   print "Choose a colour: "
   #gets user input r,g,y,b,c,m
-  user_colour = gets.chomp
+  user_colour = gets.chomp.downcase
   count = count + 1
   #the user_colour variable will be set , depending on the user input
   if user_colour == "r"
     user_colour = :red
     #calls change_colour function
-    change_colour(board,user_colour,width,height,count)
+    change_colour(board,user_colour,width,height,count,finished_game_counter,current_score)
   elsif user_colour == "g"
     user_colour = :green
-    change_colour(board,user_colour,width,height,count)
+    change_colour(board,user_colour,width,height,count,finished_game_counter,current_score)
   elsif user_colour == "b"
     user_colour = :blue
-    change_colour(board,user_colour,width,height,count)
+    change_colour(board,user_colour,width,height,count,finished_game_counter,current_score)
   elsif user_colour == "y"
     user_colour = :yellow
-    change_colour(board,user_colour,width,height,count)
+    change_colour(board,user_colour,width,height,count,finished_game_counter,current_score)
   elsif user_colour == "m"
     user_colour = :magenta
-    change_colour(board,user_colour,width,height,count)
+    change_colour(board,user_colour,width,height,count,finished_game_counter,current_score)
   elsif user_colour == "c"
     user_colour = :cyan
-    change_colour(board,user_colour,width,height,count)
+    change_colour(board,user_colour,width,height,count,finished_game_counter,current_score)
     #if user types q, he will return to the main menu
   elsif user_colour == "q"
-    haupt_menu(width,height)
+    main_menu(width,height,current_score,finished_game_counter)
   end
 end
 
 #creates 2d array, elements consists of 2 space characters coloured depending on the number
-def get_board(width,height)
+def get_board(width,height,finished_game_counter,current_score)
   board = Array.new(height) { Array.new(width, 0)}
   (0..(height-1)).each do |row|
     (0..(width-1)).each do |column| 
@@ -189,42 +214,44 @@ def get_board(width,height)
   end
   #sets count to 0
   count = 0
-  choose_colour(board,width,height,count)
+  choose_colour(board,width,height,count,finished_game_counter,current_score)
 end
 
 #changes the size of the array depending on user inputs
-def change(width,height)
+def change(width,height,current_score,finished_game_counter)
   print "Width (Currently #{width})? "
   #gets input from user
   width = gets.chomp.to_i
   print "Height (Currently #{height})? "
   height = gets.chomp.to_i
-  haupt_menu(width,height)
+  main_menu(width,height,current_score,finished_game_counter)
 end
 
 #main menu 
-def haupt_menu(width,height)
+def main_menu(width,height,current_score,finished_game_counter)
   puts "\n"
   puts "Main menu:"
   puts "s = Start game"
   puts "c = Change size"
   puts "q = Quit"
+  high_score(current_score,finished_game_counter)
   print "Please enter your choice: "
   input = gets.chomp.downcase
   if input == "c"
-    change(width,height)
+    change(width,height,current_score,finished_game_counter)
   elsif input == "s"
-    get_board(width,height)
+    get_board(width,height,finished_game_counter,current_score)
   elsif input == "q"
     exit
   end
-  #high_score
 end
 #starts program by waiting for user to press enter key
 init = gets
+current_score = 0
+finished_game_counter = 0
 #checks if enter key is pressed
 if init == "\n"
-  haupt_menu(14,9)
+  main_menu(14,9,current_score,finished_game_counter)
 end
 
       
